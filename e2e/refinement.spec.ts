@@ -46,7 +46,7 @@ test.describe('Refinement panel — interaction', () => {
     await page.goto('/');
     await analyzeAndWait(page);
     await page.getByRole('button', { name: /Refine Hypothesis/i }).click();
-    await expect(page.getByText(/exact experiment has been published/i)).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText(/exact experiment has been published/i).first()).toBeVisible({ timeout: 3_000 });
   });
 
   test('panel closes when toggled again', async ({ page }) => {
