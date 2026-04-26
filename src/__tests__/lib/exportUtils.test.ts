@@ -40,7 +40,7 @@ describe('downloadMarkdown', () => {
     const capturedElement: { href: string; download: string; click: typeof clickSpy } = { href: '', download: '', click: clickSpy };
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       if (tag === 'a') {
-        return capturedElement as HTMLElement;
+        return capturedElement as unknown as HTMLElement;
       }
       return document.createElement(tag);
     });
