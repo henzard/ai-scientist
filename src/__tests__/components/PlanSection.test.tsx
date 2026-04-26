@@ -1,10 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import PlanSection from '@/components/PlanSection';
 import { PLAN_AGENTS } from '@/lib/agents';
 
+vi.mock('@/lib/exportUtils', () => ({
+  downloadMarkdown: vi.fn(),
+}));
+import { downloadMarkdown } from '@/lib/exportUtils';
+
 const protocolAgent = PLAN_AGENTS.find(a => a.id === 'protocol')!;
 const mockSubmit = vi.fn();
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 const baseProps = {
   agent: protocolAgent,
@@ -76,5 +86,29 @@ describe('PlanSection — content rendering', () => {
     render(<PlanSection {...baseProps} content="## Protocol\n\nDone." status="done" />);
     // FeedbackPanel renders the "Rate this section" label
     expect(screen.getByText(/Rate this section/i)).toBeInTheDocument();
+  });
+});
+
+describe('PlanSection — download button', () => {
+  const doneContent = '## Protocol\n\nDone.';
+
+  it('does NOT render a download button when status is running', () => {
+    render(<PlanSection {...baseProps} content="Streaming..." status="running" />);
+    expect(screen.queryByRole('button', { name: /\.md/i })).not.toBeInTheDocument();
+  });
+
+  it('renders a download button when status is done', () => {
+    render(<PlanSection {...baseProps} content={doneContent} status="done" />);
+    expect(screen.getByRole('button', { name: /\.md/i })).toBeInTheDocument();
+  });
+
+  it('calls downloadMarkdown with correct filename on click', async () => {
+    const user = userEvent.setup();
+    render(<PlanSection {...baseProps} content={doneContent} status="done" />);
+    await user.click(screen.getByRole('button', { name: /\.md/i }));
+    expect(downloadMarkdown).toHaveBeenCalledWith(
+      doneContent,
+      'protocol.md'
+    );
   });
 });

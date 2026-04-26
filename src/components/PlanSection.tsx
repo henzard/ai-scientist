@@ -1,8 +1,10 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { Download } from 'lucide-react';
 import { AgentDefinition, AgentId, AgentStatus, FeedbackRating } from '@/lib/types';
 import { FeedbackStatus } from '@/hooks/useFeedback';
+import { downloadMarkdown } from '@/lib/exportUtils';
 import MarkdownRenderer from './MarkdownRenderer';
 import FeedbackPanel from './FeedbackPanel';
 
@@ -62,13 +64,24 @@ export default function PlanSection({
             </motion.div>
           )}
           {status === 'done' && (
-            <motion.span
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-[9px] font-mono text-[var(--gold)] tracking-wider"
-            >
-              ✓ complete
-            </motion.span>
+            <>
+              <button
+                onClick={() => downloadMarkdown(content, `${agent.id}.md`)}
+                title={`Download ${agent.label} as Markdown`}
+                aria-label=".md"
+                className="flex items-center gap-1 px-2 py-1 text-[9px] font-mono uppercase tracking-wider border border-[var(--border)] rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:border-[var(--gold)] hover:bg-[var(--gold-dim)] transition-all"
+              >
+                <Download size={9} />
+                .md
+              </button>
+              <motion.span
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-[9px] font-mono text-[var(--gold)] tracking-wider"
+              >
+                ✓ complete
+              </motion.span>
+            </>
           )}
         </div>
       </div>
