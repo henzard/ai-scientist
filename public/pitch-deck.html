@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The AI Scientist — MIT × Fulcrum Science Hackathon</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@300;400&display=swap');
+
+  :root {
+    --bg: #070c14;
+    --gold: #c8921a;
+    --gold-dim: rgba(200,146,26,0.08);
+    --cyan: #22d3ee;
+    --border: rgba(200,146,26,0.14);
+    --text-primary: #f0ead6;
+    --text-secondary: rgba(240,234,214,0.65);
+    --text-muted: rgba(240,234,214,0.35);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Source Sans 3', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── slide viewport ── */
+  .slide {
+    width: 100vw; height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 48px 64px;
+  }
+
+  /* ── atmosphere ── */
+  .atm-radial {
+    pointer-events: none;
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 60%, rgba(200,146,26,0.09) 0%, transparent 65%),
+      radial-gradient(ellipse 35% 28% at 8% 18%, rgba(34,211,238,0.06) 0%, transparent 55%);
+  }
+  .atm-grid {
+    pointer-events: none;
+    position: fixed; inset: 0;
+    opacity: 0.04;
+    background-image:
+      linear-gradient(var(--gold) 1px, transparent 1px),
+      linear-gradient(90deg, var(--gold) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  .atm-rail-l, .atm-rail-r {
+    pointer-events: none;
+    position: fixed; top: 0; bottom: 0; width: 1px; opacity: 0.22;
+    background: linear-gradient(to bottom, transparent, var(--gold) 28%, var(--gold) 72%, transparent);
+  }
+  .atm-rail-l { left: 0; }
+  .atm-rail-r { right: 0; }
+
+  /* ── layout ── */
+  .inner {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    align-items: center;
+    gap: 0;
+    max-width: 880px; width: 100%;
+  }
+
+  /* ── badge ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 6px 18px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--gold-dim);
+    margin-bottom: 36px;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.75); }
+  }
+  .badge-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* ── headline ── */
+  h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(4rem, 9vw, 7.5rem);
+    line-height: 0.92;
+    letter-spacing: -0.015em;
+    text-align: center;
+    color: var(--text-primary);
+    margin-bottom: 28px;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  /* ── divider ── */
+  .divider {
+    display: flex; align-items: center; gap: 16px;
+    width: 100%; margin-bottom: 36px;
+  }
+  .divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, var(--border));
+  }
+  .divider-line.right { background: linear-gradient(to left, transparent, var(--border)); }
+  .divider-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--text-muted); white-space: nowrap;
+  }
+
+  /* ── agents row ── */
+  .agents {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 44px;
+  }
+  .agent-pill {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: rgba(8,13,22,0.7);
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .agent-pill.lit {
+    border-color: rgba(34,211,238,0.22);
+    color: var(--cyan);
+    background: rgba(34,211,238,0.05);
+  }
+  .agent-pill span.icon { font-size: 13px; }
+
+  /* ── links row ── */
+  .links {
+    display: flex; align-items: center; gap: 32px;
+    margin-bottom: 0;
+  }
+  .link-block { text-align: center; }
+  .link-label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 5px;
+  }
+  .link-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 500;
+    color: var(--gold);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .link-value:hover { text-decoration: underline; }
+  .link-sep {
+    width: 1px; height: 36px;
+    background: var(--border);
+  }
+
+  /* ── footer strip ── */
+  .footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 48px;
+    border-top: 1px solid var(--border);
+    background: rgba(7,12,20,0.92);
+    backdrop-filter: blur(10px);
+  }
+  .footer-left {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .footer-right {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(200,146,26,0.5);
+  }
+</style>
+</head>
+<body>
+
+<!-- atmosphere -->
+<div class="atm-radial"></div>
+<div class="atm-grid"></div>
+<div class="atm-rail-l"></div>
+<div class="atm-rail-r"></div>
+
+<div class="slide">
+  <div class="inner">
+
+    <!-- badge -->
+    <div class="badge">
+      <span class="badge-dot"></span>
+      <span class="badge-text">Multi-Agent Scientific Pipeline &nbsp;·&nbsp; Challenge 04</span>
+    </div>
+
+    <!-- headline -->
+    <h1>
+      From hypothesis<br>
+      <em>to experiment</em>
+    </h1>
+
+    <!-- divider -->
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-label">Six agents &nbsp;·&nbsp; Literature QC &nbsp;·&nbsp; Operational plan</span>
+      <div class="divider-line right"></div>
+    </div>
+
+    <!-- agent pills -->
+    <div class="agents">
+      <div class="agent-pill lit"><span class="icon">🔍</span> Literature Scout</div>
+      <div class="agent-pill"><span class="icon">🧬</span> Protocol Architect</div>
+      <div class="agent-pill"><span class="icon">⚗️</span> Materials Curator</div>
+      <div class="agent-pill"><span class="icon">📊</span> Budget Analyst</div>
+      <div class="agent-pill"><span class="icon">📅</span> Timeline Planner</div>
+      <div class="agent-pill"><span class="icon">✓</span> Validation Designer</div>
+    </div>
+
+    <!-- links -->
+    <div class="links">
+      <div class="link-block">
+        <span class="link-label">Live demo</span>
+        <a class="link-value" href="https://ai-scientist-fawn.vercel.app" target="_blank">
+          ai-scientist-fawn.vercel.app
+        </a>
+      </div>
+      <div class="link-sep"></div>
+      <div class="link-block">
+        <span class="link-label">Source</span>
+        <a class="link-value" href="https://github.com/henzard/ai-scientist" target="_blank">
+          github.com/henzard/ai-scientist
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- footer -->
+<div class="footer">
+  <span class="footer-left">MIT Club of Northern California &nbsp;×&nbsp; MIT Club of Germany &nbsp;·&nbsp; April 2026</span>
+  <span class="footer-right">Sponsored by Fulcrum Science</span>
+</div>
+
+</body>
+</html>

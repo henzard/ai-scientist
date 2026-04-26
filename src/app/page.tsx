@@ -223,7 +223,7 @@ export default function Home() {
           <motion.div variants={stagger.item} className="flex items-center gap-4 mb-8">
             <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, var(--border))' }} />
             <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-[var(--text-muted)] whitespace-nowrap">
-              Five agents · Literature QC · Operational plan
+              Six agents · Literature QC · Operational plan
             </p>
             <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, var(--border))' }} />
           </motion.div>
