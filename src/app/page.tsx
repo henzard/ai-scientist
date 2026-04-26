@@ -6,6 +6,7 @@ import { Download, Copy, CheckCheck } from 'lucide-react';
 import { PLAN_AGENTS, SAMPLE_HYPOTHESES } from '@/lib/agents';
 import { PipelineState, AgentId } from '@/lib/types';
 import { detectDomain, DOMAIN_LABELS, ExperimentDomain } from '@/lib/domainDetector';
+import { downloadMarkdown } from '@/lib/exportUtils';
 import { useAgentStream } from '@/hooks/useAgentStream';
 import { useFeedback } from '@/hooks/useFeedback';
 import LiteratureBanner from '@/components/LiteratureBanner';
@@ -46,16 +47,6 @@ function buildMarkdown(hypothesis: string, sections: Partial<Record<AgentId, str
       .map(a => sections[a.id]!),
   ];
   return parts.join('\n\n---\n\n');
-}
-
-function downloadMarkdown(content: string) {
-  const blob = new Blob([content], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'experiment-plan.md';
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -167,7 +158,7 @@ export default function Home() {
   }, [state.hypothesis, sections]);
 
   const handleDownload = useCallback(() => {
-    downloadMarkdown(buildMarkdown(state.hypothesis, sections));
+    downloadMarkdown(buildMarkdown(state.hypothesis, sections), 'experiment-plan.md');
   }, [state.hypothesis, sections]);
 
   // ── Derived ─────────────────────────────────────────────────────────────────

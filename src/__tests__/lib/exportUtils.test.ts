@@ -37,17 +37,16 @@ describe('downloadMarkdown', () => {
   });
 
   it('sets the anchor download attribute to the given filename', () => {
-    let capturedAnchor: { href: string; download: string; click: () => void } | null = null;
+    const capturedElement: any = { href: '', download: '', click: clickSpy };
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       if (tag === 'a') {
-        capturedAnchor = { href: '', download: '', click: clickSpy };
-        return capturedAnchor as unknown as HTMLElement;
+        return capturedElement as HTMLElement;
       }
       return document.createElement(tag);
     });
 
     downloadMarkdown('# Hello', 'protocol.md');
-    expect(capturedAnchor?.download).toBe('protocol.md');
+    expect(capturedElement.download).toBe('protocol.md');
   });
 
   it('calls click() on the anchor', () => {
