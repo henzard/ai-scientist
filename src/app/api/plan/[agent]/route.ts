@@ -18,7 +18,7 @@ export async function POST(
     return new Response('Invalid JSON body', { status: 400 });
   }
 
-  const { hypothesis, domain } = body;
+  const { hypothesis } = body;
 
   if (typeof hypothesis !== 'string' || !hypothesis.trim()) {
     return new Response('hypothesis must be a non-empty string', { status: 400 });

@@ -133,12 +133,13 @@ function ResourcesSection({ domain }: { domain: ExperimentDomain }) {
 // ─── Learnings section ────────────────────────────────────────────────────────
 
 function LearningsSection({ hypothesis }: { hypothesis: string }) {
-  const [learnings, setLearnings] = useState<AgentLearning[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<{ learnings: AgentLearning[]; loadedFor: string }>({
+    learnings: [],
+    loadedFor: '',
+  });
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetch('/api/learnings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -146,15 +147,14 @@ function LearningsSection({ hypothesis }: { hypothesis: string }) {
     })
       .then(r => r.json())
       .then((data: { learnings: AgentLearning[] }) => {
-        if (!cancelled) setLearnings(data.learnings ?? []);
+        if (!cancelled) setState({ learnings: data.learnings ?? [], loadedFor: hypothesis });
       })
-      .catch(() => { /* no learnings available */ })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .catch(() => { if (!cancelled) setState({ learnings: [], loadedFor: hypothesis }); });
     return () => { cancelled = true; };
   }, [hypothesis]);
 
-  if (loading) return null;
-  if (learnings.length === 0) return null;
+  if (state.loadedFor !== hypothesis) return null;
+  if (state.learnings.length === 0) return null;
 
   return (
     <motion.div
@@ -172,11 +172,11 @@ function LearningsSection({ hypothesis }: { hypothesis: string }) {
           className="text-[7px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border"
           style={{ borderColor: 'rgba(34,211,238,0.25)', color: 'var(--cyan)', background: 'rgba(34,211,238,0.06)' }}
         >
-          ↺ {learnings.reduce((n, l) => n + l.corrections.length, 0)} correction{learnings.reduce((n, l) => n + l.corrections.length, 0) !== 1 ? 's' : ''}
+          ↺ {state.learnings.reduce((n, l) => n + l.corrections.length, 0)} correction{state.learnings.reduce((n, l) => n + l.corrections.length, 0) !== 1 ? 's' : ''}
         </span>
       </div>
       <div className="px-4 py-3 space-y-3">
-        {learnings.map(l => (
+        {state.learnings.map(l => (
           <div key={l.agentId}>
             <p className="text-[8px] font-mono uppercase tracking-[0.15em] text-[var(--text-muted)] mb-1.5">
               {l.agentIcon} {l.agentLabel}
