@@ -60,7 +60,8 @@ test.describe('Feedback panel', () => {
     await reachPlanComplete(page);
     const approveButtons = page.getByRole('button', { name: /approve/i });
     await approveButtons.first().click();
-    // After submitting, confirmation text should appear
+    // Approve sets the rating; still need to click Submit to confirm
+    await page.getByRole('button', { name: /submit feedback/i }).first().click();
     await expect(page.getByText(/thank|recorded|submitted/i).first()).toBeVisible({ timeout: 5_000 });
   });
 });

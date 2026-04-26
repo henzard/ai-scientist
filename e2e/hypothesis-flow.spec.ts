@@ -71,9 +71,9 @@ test.describe('Full plan generation', () => {
     await page.getByRole('button', { name: /Analyze Hypothesis/i }).click();
     await page.getByRole('button', { name: /Generate Full Plan/i }).click({ timeout: 10_000 });
 
-    // All 5 agent labels appear
+    // All 5 agent labels appear (each appears in sidebar + section header — use first())
     for (const label of ['Protocol Architect', 'Materials Curator', 'Budget Analyst', 'Timeline Planner', 'Validation Designer']) {
-      await expect(page.getByText(label)).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByText(label).first()).toBeVisible({ timeout: 15_000 });
     }
   });
 

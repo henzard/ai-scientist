@@ -37,7 +37,8 @@ test.describe('Refinement panel — interaction', () => {
     await page.goto('/');
     await analyzeAndWait(page);
     await page.getByRole('button', { name: /Refine Hypothesis/i }).click();
-    await expect(page.getByText(/Similar work exists/i)).toBeVisible({ timeout: 3_000 });
+    // LiteratureBanner and panel both show this text — first() avoids strict-mode violation
+    await expect(page.getByText(/Similar work exists/i).first()).toBeVisible({ timeout: 3_000 });
   });
 
   test('exact match shows different context message', async ({ page }) => {
