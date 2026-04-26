@@ -68,10 +68,10 @@ export default function PlanSection({
               <button
                 onClick={() => downloadMarkdown(content, `${agent.id}.md`)}
                 title={`Download ${agent.label} as Markdown`}
-                aria-label=".md"
+                aria-label={`Download ${agent.label} as Markdown`}
                 className="flex items-center gap-1 px-2 py-1 text-[9px] font-mono uppercase tracking-wider border border-[var(--border)] rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:border-[var(--gold)] hover:bg-[var(--gold-dim)] transition-all"
               >
-                <Download size={9} />
+                <Download size={9} aria-hidden />
                 .md
               </button>
               <motion.span

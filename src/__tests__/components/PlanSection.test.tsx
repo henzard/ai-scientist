@@ -12,10 +12,6 @@ import { downloadMarkdown } from '@/lib/exportUtils';
 const protocolAgent = PLAN_AGENTS.find(a => a.id === 'protocol')!;
 const mockSubmit = vi.fn();
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
 const baseProps = {
   agent: protocolAgent,
   content: '',
@@ -90,22 +86,26 @@ describe('PlanSection — content rendering', () => {
 });
 
 describe('PlanSection — download button', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   const doneContent = '## Protocol\n\nDone.';
 
   it('does NOT render a download button when status is running', () => {
     render(<PlanSection {...baseProps} content="Streaming..." status="running" />);
-    expect(screen.queryByRole('button', { name: /\.md/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /download.*markdown/i })).not.toBeInTheDocument();
   });
 
   it('renders a download button when status is done', () => {
     render(<PlanSection {...baseProps} content={doneContent} status="done" />);
-    expect(screen.getByRole('button', { name: /\.md/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /download.*markdown/i })).toBeInTheDocument();
   });
 
   it('calls downloadMarkdown with correct filename on click', async () => {
     const user = userEvent.setup();
     render(<PlanSection {...baseProps} content={doneContent} status="done" />);
-    await user.click(screen.getByRole('button', { name: /\.md/i }));
+    await user.click(screen.getByRole('button', { name: /download.*markdown/i }));
     expect(downloadMarkdown).toHaveBeenCalledWith(
       doneContent,
       'protocol.md'
