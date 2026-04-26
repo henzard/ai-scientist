@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { downloadMarkdown } from '@/lib/exportUtils';
 
 describe('downloadMarkdown', () => {
@@ -21,8 +21,18 @@ describe('downloadMarkdown', () => {
     });
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('creates a Blob with text/markdown MIME type', () => {
+    const BlobSpy = vi.spyOn(global, 'Blob');
     downloadMarkdown('# Hello', 'test.md');
+    expect(BlobSpy).toHaveBeenCalledWith(
+      ['# Hello'],
+      { type: 'text/markdown' }
+    );
     expect(createObjectURL).toHaveBeenCalled();
   });
 
