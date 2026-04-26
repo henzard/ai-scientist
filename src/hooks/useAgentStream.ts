@@ -4,16 +4,17 @@ import { AgentId } from '@/lib/types';
 export function useAgentStream() {
   const [sections, setSections] = useState<Partial<Record<AgentId, string>>>({});
 
-  const streamAgent = useCallback(async (agentId: AgentId, hypothesis: string) => {
+  const streamAgent = useCallback(async (agentId: AgentId, hypothesis: string, domain: string) => {
     const res = await fetch(`/api/plan/${agentId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hypothesis }),
+      body: JSON.stringify({ hypothesis, domain }),
     });
 
     if (!res.ok) throw new Error(`Agent ${agentId} failed: ${res.status}`);
+    if (!res.body) throw new Error(`Agent ${agentId} returned empty body`);
 
-    const reader = res.body!.getReader();
+    const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = '';
 
@@ -28,9 +29,11 @@ export function useAgentStream() {
         const payload = line.slice(6).trim();
         if (payload === '[DONE]') continue;
         try {
-          const { text } = JSON.parse(payload);
-          setSections(prev => ({ ...prev, [agentId]: (prev[agentId] ?? '') + text }));
-        } catch {}
+          const parsed = JSON.parse(payload) as { text: string };
+          setSections(prev => ({ ...prev, [agentId]: (prev[agentId] ?? '') + parsed.text }));
+        } catch {
+          // Ignore malformed SSE lines
+        }
       }
     }
   }, []);
