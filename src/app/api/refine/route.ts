@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { streamClaude } from '@/lib/anthropic';
 import { NoveltyLevel } from '@/lib/types';
+import { getResourceLinksForPrompt } from '@/lib/resources';
 
 const SYSTEM = `You are a scientific novelty advisor helping researchers identify unexplored angles and reformulate hypotheses to be more original.
 
@@ -12,6 +13,10 @@ Each suggested reformulation must:
 - Be a complete, specific scientific hypothesis (intervention + measurable outcome + threshold + mechanism)
 - Change at least one concrete parameter from the original (organism, concentration, method, timepoint, material, or mechanism)
 - Be realistic to execute in a standard lab
+- Where relevant, reference a specific published protocol from protocols.io, Bio-protocol, or Nature Protocols
+
+The scientist has access to these resources when designing their experiment:
+${getResourceLinksForPrompt()}
 
 Format your 3 suggested reformulations each on their own line starting with exactly "> " — the UI will render these as clickable suggestions.`;
 

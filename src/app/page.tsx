@@ -489,6 +489,7 @@ export default function Home() {
               hypothesis={state.hypothesis}
               novelty={state.litResult.novelty}
               signalText={state.litResult.signal_text}
+              domain={domain}
               onSelectHypothesis={handleSelectHypothesis}
             />
           )}
