@@ -69,6 +69,11 @@ export function totalCorrectionCount(): number {
   return n;
 }
 
+/** Clear all state. Only for use in test suites. */
+export function __resetForTesting(): void {
+  byAgent.clear();
+}
+
 // ─── Similarity ───────────────────────────────────────────────────────────────
 
 function tokenize(text: string): Set<string> {
