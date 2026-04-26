@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { streamClaude } from '@/lib/anthropic';
 import { PLAN_AGENTS } from '@/lib/agents';
-import { getCorrections } from '@/lib/feedbackStore';
+import { getSemanticCorrections } from '@/lib/feedbackStore';
 
 const MAX_HYPOTHESIS_LENGTH = 2000;
 
@@ -30,10 +30,12 @@ export async function POST(
   const agentDef = PLAN_AGENTS.find(a => a.id === agent);
   if (!agentDef) return new Response('Unknown agent', { status: 404 });
 
-  // Inject prior scientist corrections into the system prompt so the agent
-  // learns from expert feedback without requiring explicit re-prompting.
-  const domainStr = typeof domain === 'string' ? domain : '';
-  const corrections = domainStr ? getCorrections(domainStr, agentDef.id) : [];
+  // Semantic "second brain" retrieval: find corrections from ANY prior experiment
+  // whose hypothesis is semantically similar to the current one (Jaccard similarity
+  // on scientific keywords). This allows cross-domain learning — e.g. a pH
+  // correction submitted for a biosensor plan will surface for any similar
+  // antibody-based assay, regardless of exact domain label.
+  const corrections = getSemanticCorrections(hypothesis, agentDef.id);
   const systemPrompt = corrections.length > 0
     ? `${agentDef.system}\n\n---\nSCIENTIST CORRECTIONS FROM PREVIOUS PLANS — apply these improvements without being asked:\n${corrections.map((c, i) => `${i + 1}. ${c}`).join('\n')}`
     : agentDef.system;

@@ -1,23 +1,25 @@
 /**
- * Server-side in-memory feedback store.
+ * Server-side in-memory feedback store with semantic retrieval.
  *
- * Module-level Map survives across requests within one Node.js process. Data is
- * lost on server restart — intentional for hackathon demo; replace with Vercel
- * Blob or a database for production use.
+ * "Second brain" pattern: corrections are stored with their source hypothesis
+ * text and retrieved using Jaccard similarity — enabling cross-domain learning
+ * without an embeddings API. The similarity score is computed on scientific
+ * keywords (>4 chars) shared between hypotheses.
+ *
+ * Module-level Map survives across requests within one Node.js process.
+ * Replace with Vercel Blob / vector DB for production persistence.
  *
  * THIS FILE MUST NOT be imported by any 'use client' component.
  */
 
 import { AgentId, FeedbackEntry, FeedbackPayload } from './types';
 
-// key: `${domain}:${agentId}`
-const store = new Map<string, FeedbackEntry[]>();
+// All corrections indexed by agentId (not domain) for cross-domain retrieval
+const byAgent = new Map<AgentId, FeedbackEntry[]>();
 
-const MAX_PER_SLOT = 10; // bound memory for a single domain+agent pair
+const MAX_PER_AGENT = 50; // global cap per agent across all domains
 
-function slotKey(domain: string, agentId: AgentId): string {
-  return `${domain}:${agentId}`;
-}
+// ─── Write ────────────────────────────────────────────────────────────────────
 
 export function addFeedback(payload: FeedbackPayload): FeedbackEntry {
   const entry: FeedbackEntry = {
@@ -25,36 +27,61 @@ export function addFeedback(payload: FeedbackPayload): FeedbackEntry {
     id: Math.random().toString(36).slice(2) + Date.now().toString(36),
     createdAt: Date.now(),
   };
-  const key = slotKey(payload.domain, payload.agentId);
-  const existing = store.get(key) ?? [];
-  // Keep only the most recent MAX_PER_SLOT entries
-  store.set(key, [...existing, entry].slice(-MAX_PER_SLOT));
+  const existing = byAgent.get(payload.agentId) ?? [];
+  byAgent.set(payload.agentId, [...existing, entry].slice(-MAX_PER_AGENT));
   return entry;
 }
 
+// ─── Read ─────────────────────────────────────────────────────────────────────
+
 export function getFeedback(domain: string, agentId: AgentId): FeedbackEntry[] {
-  return store.get(slotKey(domain, agentId)) ?? [];
+  // Return domain-exact matches for the GET /api/feedback endpoint
+  return (byAgent.get(agentId) ?? []).filter(e => e.domain === domain);
 }
 
 /**
- * Returns the text of all 'down'-rated corrections for a domain+agent pair,
- * trimmed and non-empty, most recent first. Used to augment agent system prompts.
+ * Semantic retrieval: returns the most relevant corrections for a hypothesis
+ * using Jaccard similarity on scientific keyword overlap.
+ *
+ * Returns corrections (text only) from ANY domain, ranked by relevance.
+ * This is the "second brain" — corrections cross domain boundaries when the
+ * underlying science overlaps.
  */
-export function getCorrections(domain: string, agentId: AgentId): string[] {
-  return getFeedback(domain, agentId)
-    .filter(e => e.rating === 'down' && e.correction.trim().length > 0)
-    .map(e => e.correction.trim())
-    .reverse(); // most recent first
+export function getSemanticCorrections(hypothesis: string, agentId: AgentId, topK = 5): string[] {
+  const entries = (byAgent.get(agentId) ?? []).filter(
+    e => e.rating === 'down' && e.correction.trim().length > 0
+  );
+  if (entries.length === 0) return [];
+
+  const queryTokens = tokenize(hypothesis);
+
+  return entries
+    .map(e => ({ correction: e.correction.trim(), score: jaccard(queryTokens, tokenize(e.hypothesis)) }))
+    .filter(({ score }) => score > 0.05) // minimum similarity threshold
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK)
+    .map(({ correction }) => correction);
 }
 
-/**
- * Returns the total number of correction entries across all domain+agent slots.
- * Exposed so the UI can show a global "learning from N corrections" indicator.
- */
 export function totalCorrectionCount(): number {
-  let count = 0;
-  for (const entries of store.values()) {
-    count += entries.filter(e => e.rating === 'down').length;
-  }
-  return count;
+  let n = 0;
+  for (const entries of byAgent.values()) n += entries.filter(e => e.rating === 'down').length;
+  return n;
+}
+
+// ─── Similarity ───────────────────────────────────────────────────────────────
+
+function tokenize(text: string): Set<string> {
+  return new Set(
+    text.toLowerCase()
+      .split(/\W+/)
+      .filter(w => w.length > 4) // skip short stop-words
+  );
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let intersection = 0;
+  for (const token of a) { if (b.has(token)) intersection++; }
+  return intersection / (a.size + b.size - intersection);
 }

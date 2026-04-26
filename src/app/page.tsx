@@ -11,6 +11,7 @@ import { useFeedback } from '@/hooks/useFeedback';
 import LiteratureBanner from '@/components/LiteratureBanner';
 import AgentSidebar from '@/components/AgentSidebar';
 import PlanSection from '@/components/PlanSection';
+import RefinementPanel from '@/components/RefinementPanel';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -63,19 +64,21 @@ export default function Home() {
   const [state, setState] = useState<PipelineState>(INITIAL_STATE);
   const [domain, setDomain] = useState<ExperimentDomain>('general');
   const [copied, setCopied] = useState(false);
+  const [showRefinement, setShowRefinement] = useState(false);
 
   const { sections, streamAgent, resetSections } = useAgentStream();
   const { feedbackState, submitFeedback } = useFeedback(domain, state.hypothesis);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
-  const analyzeHypothesis = useCallback(async () => {
-    const hypothesis = state.hypothesis.trim();
+  const analyzeHypothesis = useCallback(async (overrideHypothesis?: string) => {
+    const hypothesis = (overrideHypothesis ?? state.hypothesis).trim();
     if (!hypothesis) return;
 
     // Detect domain synchronously — no extra API call
     const detected = detectDomain(hypothesis);
     setDomain(detected);
+    setShowRefinement(false);
     resetSections();
 
     setState(prev => ({
@@ -146,9 +149,15 @@ export default function Home() {
   const reset = useCallback(() => {
     setState(INITIAL_STATE);
     setDomain('general');
+    setShowRefinement(false);
     resetSections();
     setCopied(false);
   }, [resetSections]);
+
+  const handleSelectHypothesis = useCallback((newHypothesis: string) => {
+    setState(prev => ({ ...prev, hypothesis: newHypothesis }));
+    analyzeHypothesis(newHypothesis);
+  }, [analyzeHypothesis]);
 
   const handleCopyAll = useCallback(async () => {
     const md = buildMarkdown(state.hypothesis, sections);
@@ -259,7 +268,7 @@ export default function Home() {
                 </span>
               </div>
               <motion.button
-                onClick={analyzeHypothesis}
+                onClick={() => analyzeHypothesis()}
                 disabled={!state.hypothesis.trim() || overLimit}
                 whileHover={state.hypothesis.trim() && !overLimit ? { scale: 1.02 } : {}}
                 whileTap={state.hypothesis.trim() && !overLimit ? { scale: 0.98 } : {}}
@@ -362,6 +371,26 @@ export default function Home() {
           planStarted={planStarted}
         />
 
+        {/* Refine Hypothesis — only when lit done, not started, and not novel */}
+        <AnimatePresence>
+          {litDone && !planStarted && state.litResult && state.litResult.novelty !== 'not_found' && (
+            <motion.button
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowRefinement(v => !v)}
+              className="mt-2 mx-0.5 px-3 py-2 text-[9px] font-mono tracking-[0.15em] uppercase border rounded transition-all"
+              style={{
+                borderColor: showRefinement ? 'rgba(34,211,238,0.5)' : 'rgba(34,211,238,0.2)',
+                color: showRefinement ? 'var(--cyan)' : 'rgba(34,211,238,0.6)',
+                background: showRefinement ? 'rgba(34,211,238,0.08)' : 'transparent',
+              }}
+            >
+              🔬 {showRefinement ? 'Hide Refinement' : 'Refine Hypothesis'}
+            </motion.button>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {planComplete && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 px-2">
@@ -450,6 +479,18 @@ export default function Home() {
               <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">Literature Assessment</p>
               <LiteratureBanner result={state.litResult} />
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Hypothesis Refinement — human-in-the-loop step */}
+        <AnimatePresence>
+          {showRefinement && state.litResult && state.litResult.novelty !== 'not_found' && !planStarted && (
+            <RefinementPanel
+              hypothesis={state.hypothesis}
+              novelty={state.litResult.novelty}
+              signalText={state.litResult.signal_text}
+              onSelectHypothesis={handleSelectHypothesis}
+            />
           )}
         </AnimatePresence>
 
